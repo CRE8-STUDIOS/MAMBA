@@ -6,12 +6,7 @@
 <script>
 	import { afterNavigate } from '$app/navigation';
 
-	// Whether the menu is open. The button toggles it.
 	let isOpen = $state(false);
-
-	function toggleMenu() {
-		isOpen = !isOpen;
-	}
 
 	// Close the menu after moving to another page, so it isn't still open there.
 	afterNavigate(() => {
@@ -19,8 +14,8 @@
 	});
 </script>
 
-<header class="header" class:is-open={isOpen}>
-	<a class="logo font-display" href="/">MAMBA</a>
+<header class:is-open={isOpen}>
+	<a class="font-display" href="/">MAMBA</a>
 
 	<!-- Two lines drawn with spans; aria-expanded tells screen readers the menu state -->
 	<button
@@ -28,14 +23,14 @@
 		type="button"
 		aria-expanded={isOpen}
 		aria-controls="main-nav"
-		onclick={toggleMenu}
+		onclick={() => (isOpen = !isOpen)}
 	>
 		<span class="visually-hidden">{isOpen ? 'Close menu' : 'Open menu'}</span>
 		<span class="line"></span>
 		<span class="line"></span>
 	</button>
 
-	<nav id="main-nav" class="nav" hidden={!isOpen}>
+	<nav id="main-nav" hidden={!isOpen}>
 		<ul>
 			<li><a href="/digitals">Digitals</a></li>
 			<li><a href="/portfolio">Portfolio</a></li>

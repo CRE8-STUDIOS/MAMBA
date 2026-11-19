@@ -32,9 +32,9 @@ src/
   app.html           page shell — links the global stylesheet
   routes/            pages (see Routes above)
   lib/
-    components/      shared Svelte components (Header, ProjectDetail)
-    supabase.js      the Supabase client
-    api.js           data functions and the projectUrl() helper
+    components/      shared Svelte components (Header, ProjectGrid, ProjectDetail)
+    supabase.js      the Supabase client (server only)
+    api.js           data functions, shared load helpers and projectUrl()
   env.js             environment variable definitions
 static/
   stylesheet.css     design tokens, fonts, base styles

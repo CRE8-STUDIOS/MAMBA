@@ -1,7 +1,4 @@
-<!--
-  Content creation project detail (/work/content-creation/[slug]).
-  The layout lives in ProjectDetail so both categories share it.
--->
+<!-- Content creation project detail (/work/content-creation/[slug]). Layout lives in ProjectDetail. -->
 
 <script>
 	import ProjectDetail from '#lib/components/ProjectDetail.svelte';

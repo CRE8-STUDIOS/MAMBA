@@ -1,117 +1,106 @@
-// Data functions the pages use to load content from Supabase.
-// Each one catches its own errors, logs them and returns an empty value
-// ([] or null), so a failed request shows an empty section instead of a crash.
+// Data functions the pages use to load content from Supabase, plus the
+// project URL helper. Failed requests are logged and return an empty value
+// ([] or null), so a page shows an empty section instead of crashing.
 
+import { error } from '@sveltejs/kit';
 import { supabase } from './supabase.js';
 
-// Allowed project types per category (same values as the CHECK constraint in
-// supabase/schema.sql). The list pages use this to ignore unknown ?type= values.
-export const PROJECT_TYPES = {
+// Allowed project types per category (same as the CHECK constraint in supabase/schema.sql)
+const PROJECT_TYPES = {
 	modelling: ['brand', 'campaign', 'runway', 'magazine'],
 	content_creation: ['brand', 'concept']
 };
 
-// Route folder for each category, so URL logic lives in one place.
+// Route folder per category — the only place project URLs are defined
 const CATEGORY_PATHS = {
 	modelling: '/work/modelling',
 	content_creation: '/work/content-creation'
 };
 
-// Link to a project's detail page, e.g. /work/content-creation/cold-culture.
 export function projectUrl(project) {
 	return `${CATEGORY_PATHS[project.category]}/${project.slug}`;
 }
 
-// Shared error logger so every failure looks the same in the console.
-function logError(fn, error) {
-	console.error(`[api] ${fn} failed:`, error?.message ?? error);
-}
-
-// The single profile row (stats, bio, headshot, hero, socials), or null.
-export async function getProfile() {
+// Runs a query and turns any error into the fallback value, so the functions
+// below don't each need their own try/catch.
+async function request(name, query, fallback) {
 	try {
-		const { data, error } = await supabase.from('profile').select('*').limit(1).maybeSingle();
-		if (error) throw error;
-		return data;
-	} catch (error) {
-		logError('getProfile', error);
-		return null;
+		const { data, error: queryError } = await query;
+		if (queryError) throw queryError;
+		return data ?? fallback;
+	} catch (err) {
+		console.error(`[api] ${name} failed:`, err.message ?? err);
+		return fallback;
 	}
 }
 
-// Photos for the 2x2 grid on the Digitals page.
-export async function getDigitals() {
-	try {
-		const { data, error } = await supabase
-			.from('digitals')
-			.select('*')
-			.order('sort_order', { ascending: true });
-		if (error) throw error;
-		return data ?? [];
-	} catch (error) {
-		logError('getDigitals', error);
-		return [];
-	}
+export function getProfile() {
+	return request('getProfile', supabase.from('profile').select('*').limit(1).maybeSingle(), null);
 }
 
-// Magazine spreads for the Portfolio slider.
-export async function getPortfolioSpreads() {
-	try {
-		const { data, error } = await supabase
+export function getDigitals() {
+	return request(
+		'getDigitals',
+		supabase.from('digitals').select('id, image_url, alt_text').order('sort_order'),
+		[]
+	);
+}
+
+export function getPortfolioSpreads() {
+	return request(
+		'getPortfolioSpreads',
+		supabase
 			.from('portfolio_spreads')
-			.select('*')
-			.order('sort_order', { ascending: true });
-		if (error) throw error;
-		return data ?? [];
-	} catch (error) {
-		logError('getPortfolioSpreads', error);
-		return [];
-	}
+			.select('id, image_url, caption, note, project_id')
+			.order('sort_order'),
+		[]
+	);
 }
 
-// Published projects, optionally filtered by category and/or type.
-// e.g. getProjects({ category: 'modelling', type: 'runway' })
-export async function getProjects({ category, type } = {}) {
-	try {
-		// RLS already hides drafts from visitors; the extra filter keeps them
-		// hidden even if someone is signed in.
-		let query = supabase
-			.from('projects')
-			.select('*')
-			.eq('is_published', true)
-			.order('sort_order', { ascending: true });
-
-		if (category) query = query.eq('category', category);
-		if (type) query = query.eq('type', type);
-
-		const { data, error } = await query;
-		if (error) throw error;
-		return data ?? [];
-	} catch (error) {
-		logError('getProjects', error);
-		return [];
-	}
+// Published projects for a grid. The extra is_published filter keeps drafts
+// hidden even for a signed-in user (RLS already hides them from visitors).
+export function getProjects({ category, type } = {}) {
+	let query = supabase
+		.from('projects')
+		.select('id, slug, title, category, type, brand_name, cover_image_url')
+		.eq('is_published', true)
+		.order('sort_order');
+	if (category) query = query.eq('category', category);
+	if (type) query = query.eq('type', type);
+	return request('getProjects', query, []);
 }
 
-// One published project by slug within a category, with its gallery in
-// project.project_images (sorted by sort_order). Returns null if it doesn't
-// exist — including when the slug belongs to the other category, so
-// /work/modelling/cold-culture is a 404.
-export async function getProjectBySlug(slug, category) {
-	if (!slug || !category) return null;
-	try {
-		const { data, error } = await supabase
+// One published project with its gallery (sorted). Filtering on category too
+// means /work/modelling/cold-culture is a 404, not the content creation project.
+export function getProjectBySlug(slug, category) {
+	return request(
+		'getProjectBySlug',
+		supabase
 			.from('projects')
 			.select('*, project_images(*)')
 			.eq('slug', slug)
 			.eq('category', category)
 			.eq('is_published', true)
-			.order('sort_order', { referencedTable: 'project_images', ascending: true })
-			.maybeSingle();
-		if (error) throw error;
-		return data;
-	} catch (error) {
-		logError('getProjectBySlug', error);
-		return null;
-	}
+			.order('sort_order', { referencedTable: 'project_images' })
+			.maybeSingle(),
+		null
+	);
+}
+
+// Shared load for both grid pages: reads ?type=… (unknown types mean "all").
+// Each project gets its url here, so the page doesn't import this file and the
+// Supabase client stays out of the browser bundle.
+export async function loadProjectGrid(category, url) {
+	const types = PROJECT_TYPES[category];
+	const param = url.searchParams.get('type');
+	const type = types.includes(param) ? param : null;
+	const projects = await getProjects({ category, type });
+	return { types, type, projects: projects.map((p) => ({ ...p, url: projectUrl(p) })) };
+}
+
+// Shared load for both detail pages: 404 when the slug isn't found in this category.
+export async function loadProjectDetail(category, slug) {
+	const project = await getProjectBySlug(slug, category);
+	if (!project) error(404, 'Project not found');
+	return { project };
 }

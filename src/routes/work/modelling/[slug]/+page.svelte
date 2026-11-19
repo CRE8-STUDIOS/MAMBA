@@ -1,7 +1,4 @@
-<!--
-  Modelling project detail (/work/modelling/[slug]).
-  The layout lives in ProjectDetail so both categories share it.
--->
+<!-- Modelling project detail (/work/modelling/[slug]). Layout lives in ProjectDetail. -->
 
 <script>
 	import ProjectDetail from '#lib/components/ProjectDetail.svelte';

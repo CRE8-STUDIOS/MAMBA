@@ -4,7 +4,6 @@
 import { defineEnvVars } from '@sveltejs/kit/env';
 
 export const variables = defineEnvVars({
-	// Supabase project URL, e.g. https://xxxx.supabase.co
 	PUBLIC_SUPABASE_URL: {
 		public: true,
 		static: true,

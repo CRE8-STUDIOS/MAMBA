@@ -1,4 +1,4 @@
-// Loads the data for the Portfolio page: the magazine spreads for the slider.
+// Portfolio: the magazine spreads for the slider.
 
 import { getPortfolioSpreads } from '#lib/api.js';
 

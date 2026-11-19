@@ -1,9 +1,25 @@
 <!doctype html>
+<!-- Page shell for every route: SvelteKit fills in the head and body placeholders. -->
 <html lang="en">
 	<head>
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
 		<meta name="text-scale" content="scale" />
+		<!-- Preload the fonts used above the fold so headings don't flash in a fallback font -->
+		<link
+			rel="preload"
+			href="%sveltekit.assets%/fonts/Pointer-Regular.woff2"
+			as="font"
+			type="font/woff2"
+			crossorigin
+		/>
+		<link
+			rel="preload"
+			href="%sveltekit.assets%/fonts/VtksAbsurdo.woff2"
+			as="font"
+			type="font/woff2"
+			crossorigin
+		/>
 		<!-- Global stylesheet (fonts, tokens, base styles) served from static/ -->
 		<link rel="stylesheet" href="%sveltekit.assets%/stylesheet.css" />
 		%sveltekit.head%
