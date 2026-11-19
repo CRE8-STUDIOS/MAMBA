@@ -138,7 +138,9 @@
 		display: grid;
 		place-items: center;
 		font-family: var(--font-display);
-		font-size: var(--text-3xl);
+		/* The token's 64px minimum is still too wide for a 375px phone ("MAMBA" is
+		   ~5.7em wide), so cap it at 15vw to keep the word inside the frame */
+		font-size: min(var(--text-3xl), 15vw);
 		color: transparent;
 		background-color: rgb(255 255 255 / 0.4);
 		background-clip: text;

@@ -190,6 +190,18 @@
 		color: var(--color-accent);
 	}
 
+	/* Phones: the card becomes a full-screen menu */
+	@media (max-width: 600px) {
+		.menu {
+			position: fixed;
+			inset: 0;
+			width: auto;
+			height: auto;
+			border-radius: 0;
+			transform-origin: center;
+		}
+	}
+
 	.sticker {
 		position: absolute;
 		right: var(--space-sm);
