@@ -247,7 +247,14 @@
 		height: 328px;
 		padding: var(--space-xl) var(--space-lg);
 		border-radius: 10px;
+		/* Textured glass: the page behind is blurred (backdrop-filter), tinted with
+		   the Figma black at 0.62, with a fine grain on top (SVG noise) and a faint
+		   light edge so it reads as a pane of glass. */
 		background-color: rgb(0 0 0 / 0.62);
+		background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0.12 0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23g)'/%3E%3C/svg%3E");
+		box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.08);
+		backdrop-filter: blur(14px);
+		-webkit-backdrop-filter: blur(14px);
 		opacity: 0;
 		visibility: hidden;
 		transition:
