@@ -1,19 +1,20 @@
 <!--
-  Root layout: wraps every page with the site header.
+  Root layout: wraps every page with the site header. The header gets the
+  menu sticker from the profile loaded in +layout.server.js.
 -->
 
 <script>
 	import favicon from '#lib/assets/favicon.svg';
 	import Header from '#lib/components/Header.svelte';
 
-	let { children } = $props();
+	let { data, children } = $props();
 </script>
 
 <svelte:head>
 	<link rel="icon" href={favicon} />
 </svelte:head>
 
-<Header />
+<Header menuImage={data.profile?.menu_image_url} />
 
 <main>
 	{@render children()}

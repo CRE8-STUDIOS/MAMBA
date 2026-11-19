@@ -6,6 +6,7 @@
 <script>
 	import { afterNavigate } from '$app/navigation';
 
+	let { menuImage } = $props();
 	let isOpen = $state(false);
 
 	// Close the menu after moving to another page, so it isn't still open there.
