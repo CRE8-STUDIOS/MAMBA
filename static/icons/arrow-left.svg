@@ -1,0 +1,17 @@
+<!-- Hand-drawn arrow pointing left (the right arrow mirrored; from the Figma design). -->
+<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="48.5" height="44.8198" viewBox="0 0 48.5 44.8198" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Arrow 2" filter="url(#filter0_g_0_5)" transform="matrix(-1 0 0 1 48.5 0)">
+<path d="M4 22.4099V24.9099H42V22.4099V19.9099H4V22.4099ZM43.7678 24.1777C44.7441 23.2014 44.7441 21.6184 43.7678 20.6421L27.8579 4.73223C26.8816 3.75592 25.2986 3.75592 24.3223 4.73223C23.346 5.70854 23.346 7.29146 24.3223 8.26777L38.4645 22.4099L24.3223 36.552C23.346 37.5283 23.346 39.1113 24.3223 40.0876C25.2986 41.0639 26.8816 41.0639 27.8579 40.0876L43.7678 24.1777Z" fill="currentColor"/>
+</g>
+<defs>
+<filter id="filter0_g_0_5" x="0" y="0" width="48.5" height="44.8198" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+<feFlood flood-opacity="0" result="BackgroundImageFix"/>
+<feBlend mode="normal" in="SourceGraphic" in2="BackgroundImageFix" result="shape"/>
+<feTurbulence type="fractalNoise" baseFrequency="0.25 0.25" numOctaves="3" seed="240" />
+<feDisplacementMap in="shape" scale="8" xChannelSelector="R" yChannelSelector="G" result="displacedImage" width="100%" height="100%" />
+<feMerge result="effect1_texture_0_5">
+<feMergeNode in="displacedImage"/>
+</feMerge>
+</filter>
+</defs>
+</svg>
