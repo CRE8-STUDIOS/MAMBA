@@ -121,12 +121,17 @@
 	}
 
 	/* Home: float over the hero video in white */
-	/* Centred logo, 27px from the top as in the portfolio Figma frame */
+	/* Centred, smaller logo on the portfolio page (28px; no token this size),
+	   so the magazine and its caption fit on one screen */
 	header.centered {
-		padding-top: 27px;
+		padding-top: 20px;
 		padding-bottom: 0;
 		line-height: var(--leading-tight);
 		text-align: center;
+	}
+
+	header.centered .logo {
+		font-size: 1.75rem;
 	}
 
 	header.home {

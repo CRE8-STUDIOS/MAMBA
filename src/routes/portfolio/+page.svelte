@@ -90,30 +90,39 @@
 </section>
 
 <style>
-	/* Right under the centred MAMBA logo (top 63px in Figma) */
+	/* The page fills exactly one screen, no scrolling. Fixed space above the
+	   magazine (logo + title + gap) and below it (caption + gap), the rest is
+	   the magazine. */
 	.title {
-		font-size: var(--text-xl);
+		font-size: var(--text-md);
 		color: var(--color-accent);
 		text-align: center;
 	}
 
-	/* Magazine size: 1094 × 726 in Figma, scaled down on smaller screens while
-	   leaving room for the arrows (2 × (49px gap + 62px arrow + 16px air)). */
+	/* Magazine size: 1094 × 726 in Figma. It shrinks to fit both the width
+	   (leaving room for the arrows: 2 × (49px gap + 62px arrow + 16px air)) and
+	   the height left over between the titles and the caption. */
 	.viewer {
-		--book-w: min(1094px, 85vw, 100vw - 254px);
+		--gap: var(--space-md);
+		--top-space: 104px; /* logo 20 + 28, title 32, gap 24 */
+		--bottom-space: 80px; /* gap 10, caption ~44, bottom 26 */
+		--book-w: min(
+			1094px,
+			85vw,
+			100vw - 254px,
+			(100svh - var(--top-space) - var(--bottom-space)) * 1094 / 726
+		);
 		--book-h: calc(var(--book-w) * 726 / 1094);
 		/* flow-root keeps the magazine's top margin inside, so the arrows'
 		   position below lines up with it */
 		display: flow-root;
 		position: relative;
-		padding-bottom: var(--space-lg);
 	}
 
-	/* 39px puts the magazine's top at ~150px, as in Figma */
 	.book {
 		width: var(--book-w);
 		height: var(--book-h);
-		margin: 39px auto 0;
+		margin: var(--gap) auto 0;
 	}
 
 	/* Caption: right-aligned with the right page, ~10px under the magazine.
@@ -138,7 +147,7 @@
 	/* Arrows 49px from the screen edges, centred on the magazine's height */
 	.arrows {
 		position: absolute;
-		top: calc(39px + var(--book-h) / 2);
+		top: calc(var(--gap) + var(--book-h) / 2);
 		left: 0;
 		right: 0;
 		display: flex;
