@@ -68,7 +68,7 @@ create table if not exists public.profile (
   headshot_url    text,
   hero_media_url  text,   -- video for the home hero
   hero_poster_url text,   -- still image shown while the hero video loads
-  menu_image_url  text,   -- sticker in the menu card (every page)
+  menu_character_url text, -- spray-painting character in the menu (every page); empty = none
   instagram_url   text,
   tiktok_url      text,
 
@@ -81,7 +81,19 @@ comment on table public.profile is
 -- Columns added after the first version. CREATE TABLE IF NOT EXISTS skips an
 -- existing table, so these make sure a database created earlier gets them too.
 alter table public.profile add column if not exists hero_poster_url text;
-alter table public.profile add column if not exists menu_image_url  text;
+
+-- menu_image_url (the old menu sticker) was renamed to menu_character_url.
+-- Rename it in a database that still has the old name, then make sure it exists.
+do $$
+begin
+  if exists (
+    select 1 from information_schema.columns
+    where table_schema = 'public' and table_name = 'profile' and column_name = 'menu_image_url'
+  ) then
+    alter table public.profile rename column menu_image_url to menu_character_url;
+  end if;
+end $$;
+alter table public.profile add column if not exists menu_character_url text;
 
 -- Guarantees the table can only ever hold ONE row: every row would have the
 -- same value (true) in this index, so a second insert fails.
@@ -421,7 +433,7 @@ create policy "media: authenticated delete"
 insert into public.profile (
   name, height_cm, bust_cm, waist_cm, hips_cm,
   top_size, bottom_size, shoe_size, hair, eyes, bio,
-  headshot_url, hero_media_url, hero_poster_url, menu_image_url,
+  headshot_url, hero_media_url, hero_poster_url,
   instagram_url, tiktok_url
 )
 select
@@ -432,7 +444,7 @@ select
   -- Upload the hero video to media/home/hero.mp4 (or change this URL to match)
   'https://ivbqqemouzzipxkpputf.supabase.co/storage/v1/object/public/media/home/hero.mp4',
   'https://ivbqqemouzzipxkpputf.supabase.co/storage/v1/object/public/media/home/hero-poster.png',
-  'https://ivbqqemouzzipxkpputf.supabase.co/storage/v1/object/public/media/home/menu-sticker.png',
+  -- menu_character_url stays empty until the character is drawn
   'https://www.instagram.com/',
   'https://www.tiktok.com/'
 where not exists (select 1 from public.profile);

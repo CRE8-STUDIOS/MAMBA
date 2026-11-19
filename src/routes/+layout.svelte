@@ -1,6 +1,6 @@
 <!--
   Root layout: wraps every page with the site header. The header gets the
-  menu sticker from the profile loaded in +layout.server.js.
+  menu character from the profile loaded in +layout.server.js.
 -->
 
 <script>
@@ -14,7 +14,7 @@
 	<link rel="icon" href={favicon} />
 </svelte:head>
 
-<Header menuImage={data.profile?.menu_image_url} />
+<Header menuCharacter={data.profile?.menu_character_url} />
 
 <main>
 	{@render children()}

@@ -1,6 +1,6 @@
 <!--
   Site header on every page: MAMBA logo, the scribble menu button and the menu
-  card (Digitals, Portfolio, Work + sticker). On the home page it floats over the
+  card (Digitals, Portfolio, Work). On the home page it floats over the
   hero in white without the logo; everywhere else it's black in the normal page flow.
 -->
 
@@ -9,13 +9,14 @@
 	import { afterNavigate } from '$app/navigation';
 	import { paintMenu } from '#lib/spray.js';
 
-	let { menuImage } = $props();
+	let { menuCharacter } = $props();
 
 	let isOpen = $state(false);
 	let button = $state();
 	let menu = $state();
 	let canvas = $state();
 	let links = $state([]);
+	let painter = $state();
 
 	const navItems = [
 		{ href: '/digitals', label: 'Digitals' },
@@ -38,6 +39,7 @@
 			canvas,
 			card: menu,
 			links,
+			painter,
 			reducedMotion: matchMedia('(prefers-reduced-motion: reduce)').matches
 		});
 	});
@@ -95,9 +97,14 @@
 			{/each}
 		</ul>
 
-		{#if menuImage}
-			<img class="sticker" src={menuImage} alt="" />
-		{/if}
+		<!-- The spray-painting character goes here later. paintMenu() moves this
+		     along the nozzle path (getNozzlePath in #lib/spray.js) while the words
+		     are sprayed. Image from profile.menu_character_url; empty = nothing. -->
+		<div bind:this={painter} class="menu__painter" aria-hidden="true">
+			{#if menuCharacter}
+				<img src={menuCharacter} alt="" />
+			{/if}
+		</div>
 	</nav>
 </header>
 
@@ -306,6 +313,19 @@
 		color: var(--color-accent);
 	}
 
+	/* Placeholder for the painter: a point at the nozzle (moved with transform by
+	   paintMenu). The character image is centred on that point for now. */
+	.menu__painter {
+		position: absolute;
+		top: 0;
+		left: 0;
+		pointer-events: none;
+	}
+
+	.menu__painter img {
+		transform: translate(-50%, -50%);
+	}
+
 	/* Phones: the card becomes a full-screen menu */
 	@media (max-width: 600px) {
 		.menu {
@@ -319,14 +339,5 @@
 		.menu a {
 			font-size: var(--text-2xl);
 		}
-	}
-
-	.sticker {
-		position: absolute;
-		right: var(--space-sm);
-		bottom: 0;
-		width: 96px;
-		height: 148px;
-		object-fit: cover;
 	}
 </style>
