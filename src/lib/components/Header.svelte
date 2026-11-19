@@ -51,8 +51,7 @@
 	}
 
 	// A click anywhere outside the card and the button closes the menu.
-	// composedPath() is used because the clicked icon span may already be swapped
-	// out of the DOM by the time this runs, so contains() would miss it.
+	// composedPath() is the list of elements the click passed through.
 	function onWindowClick(event) {
 		const path = event.composedPath();
 		if (isOpen && !path.includes(menu) && !path.includes(button)) {
@@ -79,12 +78,10 @@
 		aria-controls="main-nav"
 		onclick={() => (isOpen = !isOpen)}
 	>
-		{#if isOpen}
-			<span class="icon close close-1"></span>
-			<span class="icon close close-2"></span>
-		{:else}
-			<span class="icon burger"></span>
-		{/if}
+		<!-- All three lines stay in place; CSS sprays them on and off (see .icon) -->
+		<span class="icon burger"></span>
+		<span class="icon close close-1"></span>
+		<span class="icon close close-2"></span>
 	</button>
 
 	<nav bind:this={menu} id="main-nav" class="menu" class:open={isOpen}>
@@ -126,26 +123,92 @@
 		line-height: var(--leading-tight);
 	}
 
-	/* The SVG files are drawn as masks so they take the text colour (white or black).
+	/* ---- Spray paint mask, shared by the menu words and the menu icon ----
+	   --reveal is how far the paint has got, left→right: 0% = nothing, 140% =
+	   fully painted (past 100% so the faded edge is gone). It's registered so CSS
+	   can transition it (the icon); paintMenu() sets it directly on the words.
+	   Three layers: solid paint up to the edge, plus random speckles (an SVG noise
+	   pattern) that only show in a band at the edge (speckles ∩ band), which
+	   gives the ragged spray edge. Defined on each element so var(--reveal) is
+	   that element's own value. */
+	@property --reveal {
+		syntax: '<percentage>';
+		inherits: false;
+		initial-value: 140%;
+	}
+
+	.menu a,
+	.icon {
+		--spray-mask:
+			linear-gradient(90deg, #000 calc(var(--reveal) - 22%), transparent calc(var(--reveal) - 12%)),
+			url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' seed='7'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 2 0 0 0 -1'/%3E%3CfeComponentTransfer%3E%3CfeFuncA type='discrete' tableValues='0 1'/%3E%3C/feComponentTransfer%3E%3C/filter%3E%3Crect width='64' height='64' filter='url(%23n)'/%3E%3C/svg%3E"),
+			linear-gradient(
+				90deg,
+				transparent calc(var(--reveal) - 22%),
+				#000 calc(var(--reveal) - 15%),
+				transparent var(--reveal)
+			);
+	}
+
+	/* The SVG files are drawn as masks so they take the text colour (white or black),
+	   combined with the spray mask: icon ∩ (paint ∪ (speckles ∩ band)).
 	   Sizes match the SVGs, which include a few px of padding for the scribble filter. */
 	.icon {
 		display: block;
 		background-color: currentColor;
-		mask: var(--icon) no-repeat center / 100% 100%;
+		mask-image: var(--icon), var(--spray-mask);
+		mask-size:
+			100% 100%,
+			100% 100%,
+			64px 64px,
+			100% 100%;
+		mask-repeat: no-repeat, no-repeat, repeat, no-repeat;
+		mask-composite: intersect, add, intersect;
+		transition: --reveal 220ms var(--ease-out);
 	}
 
+	/* Open: the hamburger is wiped away, then the X is sprayed on line by line.
+	   Close: the X is wiped, then the hamburger sprays back. Each state sets the
+	   delays for the transition into it. (Fixed ms: no tokens this short.) */
 	.burger {
 		--icon: url('/icons/menu.svg');
 		width: 79px;
 		height: 23px;
+		transition-delay: 200ms;
 	}
 
+	.toggle.open .burger {
+		--reveal: 0%;
+		transition-delay: 0s;
+	}
+
+	/* The card is dark on every page, so the X is always white */
 	.close {
+		--reveal: 0%;
 		position: absolute;
 		top: 50%;
 		left: 50%;
 		width: 87px;
 		height: 13px;
+		background-color: var(--color-white);
+	}
+
+	.toggle.open .close {
+		--reveal: 140%;
+	}
+
+	.toggle.open .close-1 {
+		transition-delay: 200ms;
+	}
+
+	.toggle.open .close-2 {
+		transition-delay: 320ms;
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.icon {
+			transition: none;
+		}
 	}
 
 	.close-1 {
@@ -170,11 +233,6 @@
 		min-width: 99px;
 		min-height: 43px;
 		padding: 10px;
-	}
-
-	/* The card is dark on every page, so the X is always white */
-	.toggle.open {
-		color: var(--color-white);
 	}
 
 	/* Menu card. It appears at once on open (spraying the words is the animation)
@@ -218,28 +276,15 @@
 		position: relative;
 	}
 
-	/* Spray reveal: paintMenu() moves --reveal from 0% to 140% behind the nozzle.
-	   Three mask layers: solid paint up to the edge, plus random speckles (an SVG
-	   noise pattern) that only show in a band at the edge (speckles ∩ band), which
-	   gives the ragged spray edge.
-	   At 140% the faded edge is past the end, so the word is fully solid; that's
-	   also the default, so without JS the word is simply visible. */
+	/* Words use the spray mask; paintMenu() moves --reveal behind the nozzle.
+	   Without JS it stays at 140%, so the word is simply visible. */
 	.menu a {
-		--reveal: 140%;
 		display: inline-block;
 		font-size: var(--text-xl);
 		line-height: 1.2;
 		text-transform: uppercase;
 		color: var(--color-white);
-		mask-image:
-			linear-gradient(90deg, #000 calc(var(--reveal) - 22%), transparent calc(var(--reveal) - 12%)),
-			url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' seed='7'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 2 0 0 0 -1'/%3E%3CfeComponentTransfer%3E%3CfeFuncA type='discrete' tableValues='0 1'/%3E%3C/feComponentTransfer%3E%3C/filter%3E%3Crect width='64' height='64' filter='url(%23n)'/%3E%3C/svg%3E"),
-			linear-gradient(
-				90deg,
-				transparent calc(var(--reveal) - 22%),
-				#000 calc(var(--reveal) - 15%),
-				transparent var(--reveal)
-			);
+		mask-image: var(--spray-mask);
 		mask-size:
 			100% 100%,
 			64px 64px,
