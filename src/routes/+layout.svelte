@@ -3,6 +3,8 @@
 -->
 
 <script>
+	// Global styles (fonts, tokens, base styles) — imported once here so every page gets them
+	import '#lib/styles/global.css';
 	import favicon from '#lib/assets/favicon.svg';
 	import Header from '#lib/components/Header.svelte';
 
