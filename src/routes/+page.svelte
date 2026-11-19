@@ -1,2 +1,7 @@
-<h1>Welcome to SvelteKit</h1>
-<p>Visit <a href="https://svelte.dev/docs/kit">svelte.dev/docs/kit</a> to read the documentation</p>
+<!--
+  Home page.
+  Full-screen hero image or video with the big MAMBA title on top.
+  Content: profile.hero_media_url (Supabase table: profile).
+-->
+
+<h1>MAMBA</h1>
