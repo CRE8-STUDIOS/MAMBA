@@ -170,4 +170,32 @@
 	.arrows > :global(button) {
 		pointer-events: auto;
 	}
+
+	/* Phones and portrait tablets: one page at a time (547 × 726 in Figma), with
+	   the caption and then the two arrows side by side underneath */
+	@media (max-width: 768px) {
+		.viewer {
+			--top-space: 100px;
+			--bottom-space: 150px; /* gap, caption, arrows row, bottom */
+			--book-w: min(
+				547px,
+				100vw - 2 * var(--space-sm),
+				(100svh - var(--top-space) - var(--bottom-space)) * 547 / 726
+			);
+			--book-h: calc(var(--book-w) * 726 / 547);
+		}
+
+		.caption {
+			justify-items: center;
+		}
+
+		.arrows {
+			position: static;
+			justify-content: center;
+			gap: var(--space-sm);
+			padding: 0;
+			margin-top: var(--space-xs);
+			transform: none;
+		}
+	}
 </style>

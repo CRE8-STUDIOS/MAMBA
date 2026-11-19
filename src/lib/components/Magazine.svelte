@@ -3,7 +3,8 @@
   single landscape image of both pages; the left page shows its left half and
   the right page its right half, so one image is enough for a real page turn.
   Printed-paper look: drop shadow, fold down the middle, slight page curvature
-  and paper edges. Without spreads it shows blank pages.
+  and paper edges. On narrow screens (≤768px) it shows one page at a time.
+  Without spreads it shows blank pages.
 -->
 
 <script>
@@ -28,11 +29,8 @@
 	// little further than the one before, so the paper bends like a magazine
 	// page while it goes over, instead of moving like a stiff board.
 	const STRIPS = 10;
-	const BEND = 35; // extra degrees at the free edge, mid-turn (0 at start and end)
+	const BEND = 22; // extra degrees at the free edge, mid-turn (0 at start and end): a gentle bend
 
-	// While a page turns: { dir: 1 (next) | -1 (previous) }. For reduced motion
-	// { fadeFrom } holds the spread that fades out on top of the new one.
-	let turning = $state(null);
 	let busy = false;
 	let destroyed = false;
 	onDestroy(() => (destroyed = true));
@@ -45,17 +43,47 @@
 	let ghost = $state();
 	let page = $state({ w: 0, h: 0 }); // one page in px, measured when a turn starts
 
-	const note = $derived(turning ? null : spreads[index]?.note);
+	// ---- One page at a time on narrow screens ----
+	// Pages run spread 1 left, spread 1 right, spread 2 left, … ; `side` is
+	// which half of the current spread is showing (0 left, 1 right).
+	let single = $state(false);
+	let side = $state(0);
+	$effect(() => {
+		const query = matchMedia('(max-width: 768px)');
+		const update = () => (single = query.matches);
+		update();
+		query.addEventListener('change', update);
+		return () => query.removeEventListener('change', update);
+	});
+	const pos = $derived(index * 2 + side); // page number in single view
 
 	$effect(() => {
-		canPrev = index > 0;
-		canNext = index < spreads.length - 1;
+		canPrev = single ? pos > 0 : index > 0;
+		canNext = single ? pos < spreads.length * 2 - 1 : index < spreads.length - 1;
 	});
 
-	// Which spread each base page shows. While turning, the page under the
-	// turning sheet already shows the target spread.
-	const leftSpread = $derived(turning?.dir === -1 ? index - 1 : index);
-	const rightSpread = $derived(turning?.dir === 1 ? index + 1 : index);
+	// While a page turns, what's on the turning sheet:
+	//   hinge: 1 = hinged on its left edge (turns to the left), -1 = on its right edge
+	//   front / back: { spread, half } shown on each side of the sheet (back may be blank)
+	//   reverse: the sheet comes back instead of going over (single view, previous page)
+	//   dir: which way we're moving through the magazine
+	// For reduced motion it holds { fadeFrom: { spread, half } } instead.
+	let turning = $state(null);
+
+	const note = $derived(turning || (single && side === 1) ? null : spreads[index]?.note);
+
+	// What the resting pages show. While turning, the page under the sheet
+	// already shows where we're going.
+	const leftSpread = $derived(turning?.dir === -1 && !single ? index - 1 : index);
+	const rightSpread = $derived(turning?.dir === 1 && !single ? index + 1 : index);
+	const singlePage = $derived.by(() => {
+		if (turning?.dir === 1) return pageAt(pos + 1); // next page waits underneath
+		return pageAt(pos);
+	});
+
+	function pageAt(p) {
+		return { spread: Math.floor(p / 2), half: p % 2 };
+	}
 
 	// The neighbours, preloaded so a turn never shows an empty page
 	const preload = $derived(
@@ -69,16 +97,15 @@
 	}
 
 	// Which slice of the spread image a strip shows, as a background offset in px.
-	// The image is two pages wide. Strips count outwards from the spine.
-	// Turning forward, the front is the right page and the back becomes the next
-	// spread's left page; turning back it's the other way round. The back is
-	// seen through the turned-over paper, so its slices run the other way.
-	function slice(i, side) {
+	// The image is two pages wide; strips count outwards from the hinge. The back
+	// is seen through the turned-over paper, so its slices run the other way.
+	function slice(i, face) {
 		const { w } = page;
 		const s = w / STRIPS;
-		const showsRightHalf = (turning.dir === 1) === (side === 'front');
-		const fromLeft = showsRightHalf ? w + i * s : w - (i + 1) * s;
-		return `${-fromLeft}px 0`;
+		const { half } = turning[face];
+		const fromHinge = (turning.hinge === 1) === (face === 'front');
+		const inPage = fromHinge ? i * s : w - (i + 1) * s;
+		return `${-(half * w + inPage)}px 0`;
 	}
 
 	// The page-turn easing from the design, cubic-bezier(0.645, 0.045, 0.355, 1),
@@ -93,16 +120,18 @@
 		return bez(Math.min(1, Math.max(0, t)), y1, y2);
 	}
 
-	// Draws the turn at progress p (0 = flat on its own side, 1 = landed on the
-	// other side). Only transforms and opacity, so it stays smooth.
-	function setProgress(p, dir) {
-		const bend = Math.sin(Math.PI * p); // 0 at both ends, 1 halfway
-		const base = dir * -180 * p; // the spine side of the page
-		const step = (dir * -BEND * bend) / STRIPS; // each strip a bit further
+	// Draws the turn at progress p (0 = start, 1 = done). Only transforms and
+	// opacity, so it stays smooth.
+	function setProgress(p) {
+		const { hinge, reverse } = turning;
+		const q = reverse ? 1 - p : p; // how far over the sheet is
+		const bend = Math.sin(Math.PI * q); // 0 flat, 1 halfway
+		const base = hinge * -180 * q; // the hinge side of the sheet
+		const step = (hinge * -BEND * bend) / STRIPS; // each strip a bit further
 
 		let angle = base;
 		for (let i = 0; i < STRIPS; i++) {
-			// Strip 0 hangs on the spine; every next strip on the previous one
+			// Strip 0 hangs on the hinge; every next strip on the previous one
 			strips[i].style.transform = `rotateY(${i === 0 ? base + step : step}deg)`;
 			angle += step;
 			// Paper gets darker the more it stands up (both sides)
@@ -113,11 +142,15 @@
 
 		// Shadow of the lifting sheet on the page it uncovers (fades as it lifts
 		// away) and on the page it is about to land on (just before landing)
-		const uncovered = dir === 1 ? shadows.right : shadows.left;
-		const landing = dir === 1 ? shadows.left : shadows.right;
-		uncovered.style.opacity = String((1 - p) * Math.min(1, p * 6) * 0.8);
-		uncovered.style.transform = `scaleX(${1 - p * 0.7})`;
-		landing.style.opacity = String(p > 0.5 ? Math.min(1, (p - 0.5) * 6) * (1 - p) * 1.4 : 0);
+		const uncovered = hinge === 1 ? shadows.right : shadows.left;
+		const landing = hinge === 1 ? shadows.left : shadows.right;
+		if (uncovered) {
+			uncovered.style.opacity = String((1 - q) * Math.min(1, q * 6) * 0.8);
+			uncovered.style.transform = `scaleX(${1 - q * 0.7})`;
+		}
+		if (landing) {
+			landing.style.opacity = String(q > 0.5 ? Math.min(1, (q - 0.5) * 6) * (1 - q) * 1.4 : 0);
+		}
 	}
 
 	// Runs progress from `from` to `to` with the easing: one requestAnimationFrame
@@ -137,24 +170,58 @@
 	}
 
 	const reducedMotion = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
-	const allowed = (dir) => index + dir >= 0 && index + dir < spreads.length;
+
+	function allowed(dir) {
+		if (single) return pos + dir >= 0 && pos + dir < spreads.length * 2;
+		return index + dir >= 0 && index + dir < spreads.length;
+	}
+
+	// Step through the magazine: a page in single view, a spread otherwise
+	function move(dir) {
+		if (single) {
+			const next = pageAt(pos + dir);
+			index = next.spread;
+			side = next.half;
+		} else {
+			index += dir;
+		}
+	}
+
+	// What goes on the turning sheet for a step in direction `dir`
+	function sheetFor(dir) {
+		if (single) {
+			// Forward: the current page turns away to the left, its back blank.
+			// Back: the previous page comes back over the current one.
+			const front = pageAt(dir === 1 ? pos : pos - 1);
+			return { dir, hinge: 1, front, back: { spread: -1, half: 0 }, reverse: dir === -1 };
+		}
+		return {
+			dir,
+			hinge: dir,
+			front: { spread: index, half: dir === 1 ? 1 : 0 },
+			back: { spread: index + dir, half: dir === 1 ? 0 : 1 },
+			reverse: false
+		};
+	}
 
 	// ---- Turning, in three steps shared by the arrows and dragging ----
 
 	// 1. Put the sheet in place, ready to turn
 	async function begin(dir) {
 		busy = true;
-		page = { w: magazine.clientWidth / 2, h: magazine.clientHeight };
-		turning = { dir };
+		const width = single ? magazine.clientWidth : magazine.clientWidth / 2;
+		page = { w: width, h: magazine.clientHeight };
+		turning = sheetFor(dir);
 		await tick();
 	}
 
-	// 2. Let it turn over (to = 1) or fall back (to = 0) from where it is
-	async function settle(dir, from, to) {
+	// 2. Let it go all the way (to = 1) or fall back (to = 0) from where it is
+	async function settle(from, to) {
+		const { dir } = turning;
 		try {
 			const duration = Math.max(200, TURN_MS * Math.abs(to - from));
-			await animate(from, to, duration, (p) => setProgress(p, dir));
-			if (!destroyed && to === 1) index += dir;
+			await animate(from, to, duration, setProgress);
+			if (!destroyed && to === 1) move(dir);
 		} finally {
 			end(); // never leave a sheet half-turned or the magazine blocked
 		}
@@ -169,12 +236,12 @@
 		busy = false;
 	}
 
-	// Reduced motion: no 3D, show the new spread and fade the old one out on top
+	// Reduced motion: no 3D, show the new page(s) and fade the old ones out on top
 	async function crossfade(dir) {
 		busy = true;
 		try {
-			turning = { fadeFrom: index };
-			index += dir;
+			turning = { fadeFrom: single ? pageAt(pos) : { spread: index, half: -1 } };
+			move(dir);
 			await tick();
 			await animate(1, 0, FADE_MS, (o) => (ghost.style.opacity = String(o)));
 		} finally {
@@ -182,7 +249,7 @@
 		}
 	}
 
-	// Go one spread forward (1) or back (-1). Ignored while a page is turning.
+	// Go one step forward (1) or back (-1). Ignored while a page is turning.
 	// Resolves to false if there was nowhere to go.
 	export async function turn(dir) {
 		if (busy || !allowed(dir)) return false;
@@ -190,7 +257,7 @@
 			await crossfade(dir);
 		} else {
 			await begin(dir);
-			await settle(dir, 0, 1);
+			await settle(0, 1);
 		}
 		return true;
 	}
@@ -228,7 +295,7 @@
 
 		if (drag.ready) {
 			drag.progress = Math.min(1, Math.max(0, (-drag.dir * dx) / magazine.clientWidth));
-			setProgress(drag.progress, drag.dir);
+			setProgress(drag.progress);
 		}
 	}
 
@@ -242,7 +309,7 @@
 			const pulled = Math.abs(event.clientX - x) / magazine.clientWidth;
 			if (pulled > FINISH_AT && !busy) await crossfade(dir);
 		} else if (ready) {
-			await settle(dir, progress, progress > FINISH_AT ? 1 : 0);
+			await settle(progress, progress > FINISH_AT ? 1 : 0);
 		}
 	}
 </script>
@@ -275,32 +342,44 @@
 
 <div
 	class="magazine"
+	class:single
 	bind:this={magazine}
 	onpointerdown={onPointerDown}
 	onpointermove={onPointerMove}
 	onpointerup={onPointerUp}
 	onpointercancel={onPointerUp}
 >
-	<div class="page left" style:background-image={pageImage(leftSpread)}>
-		<span class="shadow" bind:this={shadows.left}></span>
-		<span class="corner" class:peeled={peel === 'left' && !turning}></span>
-	</div>
-	<div class="page right" style:background-image={pageImage(rightSpread)}>
-		<span class="shadow" bind:this={shadows.right}></span>
-		<span class="corner" class:peeled={peel === 'right' && !turning}></span>
-	</div>
-	<div class="fold" aria-hidden="true"></div>
+	{#if single}
+		<!-- One page: styled as a right page (hinged on its left edge) -->
+		<div
+			class="page right whole"
+			style:background-image={pageImage(singlePage.spread)}
+			style:background-position={singlePage.half ? 'right center' : 'left center'}
+		>
+			<span class="shadow" bind:this={shadows.right}></span>
+			<span class="corner" class:peeled={peel === 'right' && !turning}></span>
+		</div>
+	{:else}
+		<div class="page left" style:background-image={pageImage(leftSpread)}>
+			<span class="shadow" bind:this={shadows.left}></span>
+			<span class="corner" class:peeled={peel === 'left' && !turning}></span>
+		</div>
+		<div class="page right" style:background-image={pageImage(rightSpread)}>
+			<span class="shadow" bind:this={shadows.right}></span>
+			<span class="corner" class:peeled={peel === 'right' && !turning}></span>
+		</div>
+		<div class="fold" aria-hidden="true"></div>
+	{/if}
 
-	<!-- The page being turned, hinged on the spine. Front = the current page,
-	     back = the page it becomes on the other side. It may lift out over the
-	     magazine's edges, like a real page. -->
+	<!-- The page being turned. It may lift out over the magazine's edges, like
+	     a real page. -->
 	{#if turning?.dir}
 		<div
 			class="turner"
-			class:forward={turning.dir === 1}
-			class:backward={turning.dir === -1}
-			style:--front={pageImage(index)}
-			style:--back={pageImage(index + turning.dir)}
+			class:forward={turning.hinge === 1}
+			class:backward={turning.hinge === -1}
+			style:--front={pageImage(turning.front.spread)}
+			style:--back={pageImage(turning.back.spread)}
 			style:--size="{page.w * 2}px {page.h}px"
 			aria-hidden="true"
 		>
@@ -308,11 +387,20 @@
 		</div>
 	{/if}
 
-	<!-- Reduced motion: the old spread fading out over the new one -->
-	{#if turning?.fadeFrom !== undefined}
+	<!-- Reduced motion: the old page(s) fading out over the new ones -->
+	{#if turning?.fadeFrom}
+		{@const from = turning.fadeFrom}
 		<div bind:this={ghost} class="ghost">
-			<div class="page left" style:background-image={pageImage(turning.fadeFrom)}></div>
-			<div class="page right" style:background-image={pageImage(turning.fadeFrom)}></div>
+			{#if single}
+				<div
+					class="page right whole"
+					style:background-image={pageImage(from.spread)}
+					style:background-position={from.half ? 'right center' : 'left center'}
+				></div>
+			{:else}
+				<div class="page left" style:background-image={pageImage(from.spread)}></div>
+				<div class="page right" style:background-image={pageImage(from.spread)}></div>
+			{/if}
 		</div>
 	{/if}
 
@@ -339,7 +427,7 @@
 		cursor: grab;
 		/* Depth of the turn: the lifted page comes towards you and may overlap
 		   the magazine's edges, without looming over the whole screen */
-		perspective: 2400px;
+		perspective: 3000px;
 		/* Two soft shadows under the magazine, then 1–2px paper edges on the
 		   outer sides so it reads as a stack of pages */
 		box-shadow:
@@ -372,6 +460,11 @@
 	.page.right {
 		right: 0;
 		background-position: right center;
+	}
+
+	/* Single view: one page over the full width (still half of the image) */
+	.page.whole {
+		width: 100%;
 	}
 
 	/* Page curvature: a page gets darker towards the spine and catches a little
@@ -457,6 +550,12 @@
 
 	.turner.forward {
 		left: 50%;
+	}
+
+	/* Single view: the sheet covers the one page */
+	.single .turner {
+		left: 0;
+		width: 100%;
 	}
 
 	.turner.backward {

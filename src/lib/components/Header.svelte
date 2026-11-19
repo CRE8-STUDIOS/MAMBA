@@ -134,6 +134,13 @@
 		font-size: 1.75rem;
 	}
 
+	/* Phones: a little smaller still, so it doesn't run into the menu button */
+	@media (max-width: 600px) {
+		header.centered .logo {
+			font-size: 1.5rem;
+		}
+	}
+
 	header.home {
 		position: absolute;
 		inset: 0 0 auto;
