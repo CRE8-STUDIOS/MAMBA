@@ -1,0 +1,202 @@
+
+
+/* FONTS */
+
+   @font-face {
+    font-family: "Pointer";
+    src: url("../fonts/Pointer-Regular.woff2") format("woff2");
+    font-display: swap;
+  }
+  
+  @font-face {
+    font-family: "Vtks Absurdo";
+    src: url("../fonts/VtksAbsurdo.woff2") format("woff2");
+    font-display: swap;
+  }
+  
+  @font-face {
+    font-family: "Telegraf";
+    src: url("../fonts/Telegraf-Regular.woff2") format("woff2");
+    font-display: swap;
+  }
+  
+  
+  :root {
+  
+    /* || 2. TOKENS — COLORS
+       Palette = the raw values from Figma.
+       Roles   = what a color is used for. Use roles in your CSS. */
+  
+    /* Palette */
+    --color-black:      #000000;
+    --color-white:      #ffffff;
+    --color-grey-light: #d9d9d9;
+    --color-grey:       #cacaca;
+    --color-grey-dark:  #a4a4a4;
+    --color-red:        #960000;
+    --color-brown:      #33240f;
+  
+    /* Roles */
+    --color-bg:           var(--color-grey);       /* page background */
+    --color-surface:      var(--color-grey-light); /* image placeholders, cards */
+    --color-text:         var(--color-black);      /* main text */
+    --color-text-inverse: var(--color-white);      /* text on photos / dark bg */
+    --color-text-muted:   var(--color-grey-dark);  /* big faded labels */
+    --color-accent:       var(--color-red);        /* graffiti headings, links */
+  
+  
+    /* || 3. TOKENS — TYPOGRAPHY */
+  
+    /* Font families */
+    --font-display:  "Pointer", "Arial Black", sans-serif;       
+    --font-graffiti: "Vtks Absurdo", "Permanent Marker", cursive; 
+    --font-body:     "Telegraf", "Helvetica Neue", Arial, sans-serif;
+  
+    /* Font sizes (Figma px → rem, 16px = 1rem) */
+    --text-body: 1rem;                        /* 16px  body, stats */
+    --text-sm:   1.5rem;                      /* 24px  sublabels */
+    --text-md:   2rem;                        /* 32px  link row */
+    --text-lg:   2.5rem;                      /* 40px  card titles */
+    --text-xl:   3rem;                        /* 48px  DIGITALS, WORK, filters */
+    --text-2xl:  clamp(3rem, 7vw, 6rem);      /* 96px  name on Digitals */
+    --text-3xl:  clamp(4rem, 9vw, 8rem);      /* 128px hero MAMBA */
+    --text-logo: 2.25rem;                     /* 36px  header MAMBA */
+  
+    /* Line height & letter spacing */
+    --leading-tight: 1;
+    --leading-body:  2.125;    /* 34px on 16px text */
+    --tracking-body: 0.07em;   /* 1.12px */
+  
+  
+    /* SPACING & LAYOUT */
+  
+    --space-xs:  0.5rem;   /*  8px */
+    --space-sm:  1rem;     /* 16px */
+    --space-md:  1.5rem;   /* 24px */
+    --space-lg:  3rem;     /* 48px */
+    --space-xl:  4.5rem;   /* 72px */
+    --space-2xl: 6rem;     /* 96px */
+  
+    --page-gutter: var(--space-xl);  
+    --page-max:    1440px;          
+  
+  
+    /* EFFECTS */
+  
+    --shadow-card: 0 10px 10px rgb(0 0 0 / 0.56);
+    --ease-out:    cubic-bezier(0.22, 1, 0.36, 1);
+    --duration:    0.4s;
+  }
+  
+  
+  /* RESET */
+  
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+  
+  img,
+  video {
+    display: block;
+    max-width: 100%;
+  }
+  
+  button {
+    font: inherit;
+    color: inherit;
+    background: none;
+    border: 0;
+    cursor: pointer;
+  }
+  
+  
+  /* GENERAL STYLES */
+  
+  body {
+    background-color: var(--color-bg);
+    color: var(--color-text);
+    font-family: var(--font-body);
+    font-size: var(--text-body);
+    line-height: var(--leading-body);
+    letter-spacing: var(--tracking-body);
+  }
+  
+  h1,
+  h2,
+  h3 {
+    font-weight: 400;
+    line-height: var(--leading-tight);
+    text-transform: uppercase;
+  }
+  
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
+  
+  ul {
+    list-style: none;
+  }
+  
+  
+  .font-display {
+    font-family: var(--font-display);
+    letter-spacing: 0.02em;
+  }
+  
+  .font-graffiti {
+    font-family: var(--font-graffiti);
+    letter-spacing: 0;
+  }
+  
+  .text-accent  { color: var(--color-accent); }
+  .text-inverse { color: var(--color-text-inverse); }
+  .text-muted   { color: var(--color-text-muted); }
+  
+  .container {
+    max-width: var(--page-max);
+    margin-inline: auto;
+    padding-inline: var(--page-gutter);
+  }
+  
+  /* Hidden visually, still read by screen readers */
+  .visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+  
+  
+  /* || RESPONSIVE
+     Only tokens change here, so every page adapts automatically. */
+  
+  @media (max-width: 960px) {
+    :root {
+      --page-gutter: var(--space-md);
+      --text-xl: 2.5rem;
+      --text-lg: 2rem;
+    }
+  }
+  
+  @media (max-width: 600px) {
+    :root {
+      --page-gutter: var(--space-sm);
+      --text-logo: 1.625rem;
+      --text-xl: 2rem;
+      --text-lg: 1.625rem;
+      --text-md: 1.375rem;
+    }
+  }
+  
+  @media (prefers-reduced-motion: reduce) {
+    :root {
+      --duration: 0s;
+    }
+  }
