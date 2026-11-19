@@ -15,6 +15,7 @@
 --   6. Grants (which API roles may touch which tables)
 --   7. Row Level Security policies
 --   8. Storage bucket "media"
+--   9. Example rows
 -- =============================================================================
 
 
@@ -128,8 +129,9 @@ create table if not exists public.projects (
   cover_image_url  text,
   description      text,
 
-  -- Background colour of the detail page, e.g. #33240f.
-  theme_color      text check (theme_color ~ '^#[0-9a-fA-F]{6}$'),
+  -- Background colour of the detail page. Defaults to the brand brown.
+  theme_color      text not null default '#33240f'
+                   check (theme_color ~ '^#[0-9a-fA-F]{6}$'),
 
   -- Drafts stay hidden from the public site until this is set to true.
   is_published     boolean not null default false,
@@ -398,6 +400,67 @@ create policy "media: authenticated delete"
   on storage.objects for delete
   to authenticated
   using (bucket_id = 'media');
+
+
+-- -----------------------------------------------------------------------------
+-- 9. EXAMPLE ROWS
+-- Placeholder content so every page has something to show. Replace the text
+-- and the image URLs with real content (upload images to the "media" bucket
+-- and paste their public URLs). Each insert is skipped if the row already
+-- exists, so running this file again doesn't create duplicates.
+-- -----------------------------------------------------------------------------
+
+-- Profile (the table only allows one row)
+insert into public.profile (
+  name, height_cm, bust_cm, waist_cm, hips_cm,
+  top_size, bottom_size, shoe_size, hair, eyes, bio,
+  headshot_url, hero_media_url, instagram_url, tiktok_url
+)
+select
+  'Mamba', 175, 82, 62, 90,
+  'S', '36', '39', 'Dark brown', 'Brown',
+  'Model and content creator. Replace this with the real bio.',
+  'https://ivbqqemouzzipxkpputf.supabase.co/storage/v1/object/public/media/examples/headshot.jpg',
+  'https://ivbqqemouzzipxkpputf.supabase.co/storage/v1/object/public/media/examples/hero.jpg',
+  'https://www.instagram.com/',
+  'https://www.tiktok.com/'
+where not exists (select 1 from public.profile);
+
+-- One published project: /work/cold-culture
+insert into public.projects (
+  slug, title, category, type, brand_name, cover_image_url,
+  description, theme_color, is_published, sort_order
+)
+values (
+  'cold-culture', 'Cold Culture', 'content_creation', 'concept', 'Cold Culture',
+  'https://ivbqqemouzzipxkpputf.supabase.co/storage/v1/object/public/media/examples/cold-culture-cover.jpg',
+  'Example concept project. Replace this with the real description.',
+  '#33240f', true, 1
+)
+on conflict (slug) do nothing;
+
+-- Two gallery images for cold-culture (only added if it has none yet)
+insert into public.project_images (project_id, image_url, alt_text, sort_order)
+select p.id, img.image_url, img.alt_text, img.sort_order
+from public.projects p
+cross join (
+  values
+    ('https://ivbqqemouzzipxkpputf.supabase.co/storage/v1/object/public/media/examples/cold-culture-1.jpg',
+     'Cold Culture — image 1', 1),
+    ('https://ivbqqemouzzipxkpputf.supabase.co/storage/v1/object/public/media/examples/cold-culture-2.jpg',
+     'Cold Culture — image 2', 2)
+) as img (image_url, alt_text, sort_order)
+where p.slug = 'cold-culture'
+  and not exists (select 1 from public.project_images pi where pi.project_id = p.id);
+
+-- One magazine spread for the Portfolio slider
+insert into public.portfolio_spreads (image_url, caption, note, sort_order)
+select
+  'https://ivbqqemouzzipxkpputf.supabase.co/storage/v1/object/public/media/examples/puma-x-horati.jpg',
+  'PUMA X HORATI',
+  'Example note',
+  1
+where not exists (select 1 from public.portfolio_spreads where caption = 'PUMA X HORATI');
 
 -- =============================================================================
 -- End of schema
