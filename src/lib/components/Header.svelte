@@ -182,12 +182,13 @@
 		transition-delay: 0s;
 	}
 
-	/* The card is dark on every page, so the X is always white */
+	/* The card is dark on every page, so the X is always white. It sits 24px
+	   further in than the hamburger so it has room from the card's corner. */
 	.close {
 		--reveal: 0%;
 		position: absolute;
-		top: 50%;
-		left: 50%;
+		top: calc(50% + var(--space-md));
+		left: calc(50% - var(--space-md));
 		width: 87px;
 		height: 13px;
 		background-color: var(--color-white);
