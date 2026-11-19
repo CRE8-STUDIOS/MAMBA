@@ -1,7 +1,7 @@
 <!--
   Site header on every page: MAMBA logo, the scribble menu button and the menu
-  card (Digitals, Portfolio, Work + sticker). White and on top of the hero on the
-  home page, black in the normal page flow everywhere else.
+  card (Digitals, Portfolio, Work + sticker). On the home page it floats over the
+  hero in white without the logo; everywhere else it's black in the normal page flow.
 -->
 
 <script>
@@ -43,7 +43,10 @@
 <svelte:window onkeydown={onKeydown} onclick={onWindowClick} />
 
 <header class:home={isHome}>
-	<a class="logo font-display" href="/">MAMBA</a>
+	<!-- No logo on the home page: the big hero title already says MAMBA -->
+	{#if !isHome}
+		<a class="logo font-display" href="/">MAMBA</a>
+	{/if}
 
 	<button
 		bind:this={button}
