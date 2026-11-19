@@ -7,18 +7,39 @@
 <script>
 	import { page } from '$app/state';
 	import { afterNavigate } from '$app/navigation';
+	import { paintMenu } from '#lib/spray.js';
 
 	let { menuImage } = $props();
 
 	let isOpen = $state(false);
 	let button = $state();
 	let menu = $state();
+	let canvas = $state();
+	let links = $state([]);
+
+	const navItems = [
+		{ href: '/digitals', label: 'Digitals' },
+		{ href: '/portfolio', label: 'Portfolio' },
+		{ href: '/work', label: 'Work' }
+	];
 
 	const isHome = $derived(page.route.id === '/');
 
 	// Close the menu after moving to another page, so it isn't still open there.
 	afterNavigate(() => {
 		isOpen = false;
+	});
+
+	// Spray the menu words each time the menu opens. The cleanup cancels a
+	// running animation when it closes, so nothing runs while it's closed.
+	$effect(() => {
+		if (!isOpen) return;
+		return paintMenu({
+			canvas,
+			card: menu,
+			links,
+			reducedMotion: matchMedia('(prefers-reduced-motion: reduce)').matches
+		});
 	});
 
 	// Escape closes the menu and puts focus back on the button.
@@ -67,10 +88,14 @@
 	</button>
 
 	<nav bind:this={menu} id="main-nav" class="menu" class:open={isOpen}>
+		<!-- Paint drips under the words, drawn by paintMenu() in #lib/spray.js -->
+		<canvas bind:this={canvas} class="paint" aria-hidden="true"></canvas>
+
+		<!-- Real links from the start; only the way they appear is animated -->
 		<ul>
-			<li><a class="font-graffiti" href="/digitals">Digitals</a></li>
-			<li><a class="font-graffiti" href="/portfolio">Portfolio</a></li>
-			<li><a class="font-graffiti" href="/work">Work</a></li>
+			{#each navItems as item, i (item.href)}
+				<li><a bind:this={links[i]} class="font-graffiti" href={item.href}>{item.label}</a></li>
+			{/each}
 		</ul>
 
 		{#if menuImage}
@@ -152,8 +177,10 @@
 		color: var(--color-white);
 	}
 
-	/* Menu card. Hidden with visibility (not display) so it can fade and scale;
-	   visibility switches after the fade so links can't be tabbed to when closed. */
+	/* Menu card. It appears at once on open (spraying the words is the animation)
+	   and fades out in 200ms on close (fixed value: no duration token is this
+	   short). Visibility switches after the fade so the links can't be tabbed to
+	   while it's closed. */
 	.menu {
 		position: absolute;
 		top: 28px;
@@ -165,26 +192,59 @@
 		background-color: rgb(0 0 0 / 0.62);
 		opacity: 0;
 		visibility: hidden;
-		transform: scale(0.96);
-		transform-origin: top right;
 		transition:
-			opacity var(--duration) var(--ease-out),
-			transform var(--duration) var(--ease-out),
-			visibility 0s linear var(--duration);
+			opacity 200ms var(--ease-out),
+			visibility 0s linear 200ms;
 	}
 
 	.menu.open {
 		opacity: 1;
 		visibility: visible;
-		transform: none;
-		transition-delay: 0s;
+		transition: none;
 	}
 
+	/* Covers the card; paintMenu() sets its pixel size for sharp retina drawing */
+	.paint {
+		position: absolute;
+		inset: 0;
+		width: 100%;
+		height: 100%;
+		border-radius: inherit;
+		pointer-events: none;
+	}
+
+	/* Keep the links above the canvas */
+	.menu ul {
+		position: relative;
+	}
+
+	/* Spray reveal: paintMenu() moves --reveal from 0% to 140% behind the nozzle.
+	   Three mask layers: solid paint up to the edge, plus random speckles (an SVG
+	   noise pattern) that only show in a band at the edge (speckles ∩ band), which
+	   gives the ragged spray edge.
+	   At 140% the faded edge is past the end, so the word is fully solid; that's
+	   also the default, so without JS the word is simply visible. */
 	.menu a {
+		--reveal: 140%;
+		display: inline-block;
 		font-size: var(--text-xl);
 		line-height: 1.2;
 		text-transform: uppercase;
 		color: var(--color-white);
+		mask-image:
+			linear-gradient(90deg, #000 calc(var(--reveal) - 22%), transparent calc(var(--reveal) - 12%)),
+			url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' seed='7'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 2 0 0 0 -1'/%3E%3CfeComponentTransfer%3E%3CfeFuncA type='discrete' tableValues='0 1'/%3E%3C/feComponentTransfer%3E%3C/filter%3E%3Crect width='64' height='64' filter='url(%23n)'/%3E%3C/svg%3E"),
+			linear-gradient(
+				90deg,
+				transparent calc(var(--reveal) - 22%),
+				#000 calc(var(--reveal) - 15%),
+				transparent var(--reveal)
+			);
+		mask-size:
+			100% 100%,
+			64px 64px,
+			100% 100%;
+		mask-composite: add, intersect;
 		transition: color var(--duration) var(--ease-out);
 	}
 
@@ -201,7 +261,10 @@
 			width: auto;
 			height: auto;
 			border-radius: 0;
-			transform-origin: center;
+		}
+
+		.menu a {
+			font-size: var(--text-2xl);
 		}
 	}
 
