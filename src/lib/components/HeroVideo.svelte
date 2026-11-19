@@ -134,10 +134,8 @@
 		box-shadow: inset 0 4px 4px rgb(0 0 0 / 0.25);
 	}
 
-	/* Black glass title: a see-through black fill (a background clipped to the
-	   letters), a darker black rim that outlines the glass edge, and the Figma
-	   black shadow drawn over the fill as an inner shadow at the top
-	   of each letter. */
+	/* Glass title: the white fill is a background clipped to the letters, and the
+	   text-shadow drawn over that fill reads as an inner shadow at the top of each letter. */
 	.title {
 		position: absolute;
 		inset: 0;
@@ -148,10 +146,9 @@
 		   ~5.7em wide), so cap it at 15vw to keep the word inside the frame */
 		font-size: min(var(--text-3xl), 15vw);
 		color: transparent;
-		background-color: rgb(0 0 0 / 0.55);
+		background-color: rgb(255 255 255 / 0.4);
 		background-clip: text;
 		-webkit-background-clip: text;
-		-webkit-text-stroke: 1px rgb(0 0 0 / 0.6);
 		text-shadow: 0 4px 4px rgb(0 0 0 / 0.25);
 		pointer-events: none;
 	}
