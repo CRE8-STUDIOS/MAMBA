@@ -1,3 +1,5 @@
+// Prettier settings for the project (run with npm run format).
+
 /** @type {import("prettier").Config} */
 const config = {
 	useTabs: true,

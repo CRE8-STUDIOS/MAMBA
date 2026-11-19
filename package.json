@@ -4,7 +4,6 @@
 	"private": true,
 	"type": "module",
 	"imports": {
-		"#lib": "./src/lib/index.js",
 		"#lib/*": "./src/lib/*"
 	},
 	"scripts": {
@@ -23,5 +22,8 @@
 		"prettier-plugin-svelte": "^4.1.1",
 		"svelte": "^5.57.3",
 		"vite": "^8.3.8"
+	},
+	"dependencies": {
+		"@supabase/supabase-js": "^2.119.2"
 	}
 }
