@@ -340,10 +340,14 @@
 	</div>
 {/snippet}
 
+<!-- role/label: the pages can be dragged to turn them (the arrows are the
+     keyboard way to do the same) -->
 <div
 	class="magazine"
 	class:single
 	bind:this={magazine}
+	role="group"
+	aria-label="Magazine, drag a page sideways to turn it"
 	onpointerdown={onPointerDown}
 	onpointermove={onPointerMove}
 	onpointerup={onPointerUp}

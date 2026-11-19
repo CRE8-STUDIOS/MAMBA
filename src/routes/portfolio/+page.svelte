@@ -6,19 +6,35 @@
 
 <script>
 	import { fade } from 'svelte/transition';
+	import { untrack } from 'svelte';
+	import { page } from '$app/state';
+	import { goto } from '$app/navigation';
 	import Magazine from '#lib/components/Magazine.svelte';
 	import ArrowButton from '#lib/components/ArrowButton.svelte';
 
 	let { data } = $props();
 
 	let magazine = $state();
-	let index = $state(0);
+	// Opens on the spread from ?page= (worked out in +page.server.js)
+	let index = $state(untrack(() => data.start));
 	let canPrev = $state(false);
 	let canNext = $state(false);
 	let peel = $state(null);
 	let arrows = $state({});
 
 	const spread = $derived(data.spreads[index]);
+
+	// Keep ?page= in the address bar in step with the open spread, so the link
+	// can be shared. Shallow + replace: only the URL changes, without a new
+	// history entry per page turn. Only `index` is tracked; reading the URL and
+	// page state inside untrack keeps this from re-running itself in a loop.
+	$effect(() => {
+		const search = index > 0 ? `?page=${index + 1}` : '';
+		untrack(() => {
+			if (location.search === search) return;
+			goto(location.pathname + search, { shallow: true, replace: true, state: page.state });
+		});
+	});
 
 	// Turn the page from an arrow. Focus stays on that arrow; if it has just
 	// disappeared (first or last spread), it moves to the other one.
@@ -64,7 +80,12 @@
 					in:fade={{ duration: 300, delay: 150 }}
 					out:fade={{ duration: 150 }}
 				>
-					{spread.caption}
+					<!-- Links to the project when the spread belongs to one -->
+					{#if spread.href}
+						<a href={spread.href}>{spread.caption}</a>
+					{:else}
+						{spread.caption}
+					{/if}
 				</p>
 			{/if}
 		{/key}
@@ -144,6 +165,11 @@
 		width: var(--book-w);
 		min-height: calc(var(--text-logo) * 1.2);
 		margin: 10px auto 0;
+	}
+
+	.caption a:hover,
+	.caption a:focus-visible {
+		text-decoration: underline;
 	}
 
 	.caption p {

@@ -51,15 +51,21 @@ export function getDigitals() {
 	);
 }
 
-export function getPortfolioSpreads() {
-	return request(
+// Magazine spreads for the Portfolio page. A spread linked to a (published)
+// project gets that project's URL as href, so its caption can link to it.
+export async function getPortfolioSpreads() {
+	const spreads = await request(
 		'getPortfolioSpreads',
 		supabase
 			.from('portfolio_spreads')
-			.select('id, image_url, caption, note, project_id')
+			.select('id, image_url, caption, note, project:projects(slug, category)')
 			.order('sort_order'),
 		[]
 	);
+	return spreads.map(({ project, ...spread }) => ({
+		...spread,
+		href: project ? projectUrl(project) : null
+	}));
 }
 
 // Published projects for a grid. The extra is_published filter keeps drafts
