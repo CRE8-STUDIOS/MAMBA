@@ -146,7 +146,7 @@
 		   ~5.7em wide), so cap it at 15vw to keep the word inside the frame */
 		font-size: min(var(--text-3xl), 15vw);
 		color: transparent;
-		background-color: rgb(255 255 255 / 0.4);
+		background-color: rgb(255 255 255 / 0.2);
 		background-clip: text;
 		-webkit-background-clip: text;
 		text-shadow: 0 4px 4px rgb(0 0 0 / 0.25);
