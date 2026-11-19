@@ -26,14 +26,18 @@
 	// Browsers usually block autoplay with sound. Try it first; if it's blocked,
 	// play muted and turn the sound on with the visitor's first click or keypress.
 	async function playWithSound() {
-		video.muted = false;
+		// Local copy: if the page is left while play() is pending, Svelte sets
+		// `video` to null before the catch below runs.
+		const el = video;
+		el.muted = false;
 		try {
-			await video.play();
+			await el.play();
 		} catch {
-			video.muted = true;
-			video.play().catch(() => {});
+			if (unlock.signal.aborted) return; // component is already gone
+			el.muted = true;
+			el.play().catch(() => {});
 			const unmute = () => {
-				video.muted = false;
+				el.muted = false;
 				unlock.abort();
 			};
 			addEventListener('click', unmute, { signal: unlock.signal });
