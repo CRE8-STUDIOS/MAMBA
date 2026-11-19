@@ -4,6 +4,24 @@
 
 import { supabase } from './supabase.js';
 
+// Allowed project types per category (same values as the CHECK constraint in
+// supabase/schema.sql). The list pages use this to ignore unknown ?type= values.
+export const PROJECT_TYPES = {
+	modelling: ['brand', 'campaign', 'runway', 'magazine'],
+	content_creation: ['brand', 'concept']
+};
+
+// Route folder for each category, so URL logic lives in one place.
+const CATEGORY_PATHS = {
+	modelling: '/work/modelling',
+	content_creation: '/work/content-creation'
+};
+
+// Link to a project's detail page, e.g. /work/content-creation/cold-culture.
+export function projectUrl(project) {
+	return `${CATEGORY_PATHS[project.category]}/${project.slug}`;
+}
+
 // Shared error logger so every failure looks the same in the console.
 function logError(fn, error) {
 	console.error(`[api] ${fn} failed:`, error?.message ?? error);
@@ -75,15 +93,18 @@ export async function getProjects({ category, type } = {}) {
 	}
 }
 
-// One published project by slug, with its gallery in project.project_images
-// (sorted by sort_order). Returns null if it doesn't exist.
-export async function getProjectBySlug(slug) {
-	if (!slug) return null;
+// One published project by slug within a category, with its gallery in
+// project.project_images (sorted by sort_order). Returns null if it doesn't
+// exist — including when the slug belongs to the other category, so
+// /work/modelling/cold-culture is a 404.
+export async function getProjectBySlug(slug, category) {
+	if (!slug || !category) return null;
 	try {
 		const { data, error } = await supabase
 			.from('projects')
 			.select('*, project_images(*)')
 			.eq('slug', slug)
+			.eq('category', category)
 			.eq('is_published', true)
 			.order('sort_order', { referencedTable: 'project_images', ascending: true })
 			.maybeSingle();
