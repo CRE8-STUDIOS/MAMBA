@@ -254,15 +254,7 @@
 		width: 394px;
 		height: 328px;
 		padding: var(--space-xl) var(--space-lg);
-		border-radius: 10px;
-		/* Textured glass: the page behind is blurred (backdrop-filter), tinted with
-		   the Figma black at 0.62, with a fine grain on top (SVG noise) and a faint
-		   light edge so it reads as a pane of glass. */
-		background-color: rgb(0 0 0 / 0.62);
-		background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0.12 0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23g)'/%3E%3C/svg%3E");
-		box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.08);
-		backdrop-filter: blur(14px);
-		-webkit-backdrop-filter: blur(14px);
+		isolation: isolate; /* keeps the ::before background behind the links */
 		opacity: 0;
 		visibility: hidden;
 		transition:
@@ -276,13 +268,32 @@
 		transition: none;
 	}
 
+	/* The card itself, as a background layer so its rough edge never clips the
+	   words or (later) the painter character.
+	   Textured glass: the page behind is blurred (backdrop-filter), tinted with the
+	   Figma black at 0.62, with a fine grain on top (SVG noise).
+	   Graffiti edge: the mask is the card shape run through the same "texture"
+	   filter as the Figma menu icons (noise displacement, scale 8), so the border
+	   is rough like the scribble lines instead of a clean rounded rectangle. */
+	.menu::before {
+		content: '';
+		position: absolute;
+		inset: 0;
+		z-index: -1;
+		background-color: rgb(0 0 0 / 0.62);
+		background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0.12 0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23g)'/%3E%3C/svg%3E");
+		backdrop-filter: blur(14px);
+		-webkit-backdrop-filter: blur(14px);
+		mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='394' height='328' viewBox='0 0 394 328' preserveAspectRatio='none'%3E%3Cfilter id='t' x='-5%25' y='-5%25' width='110%25' height='110%25'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.25' numOctaves='3' seed='5633'/%3E%3CfeDisplacementMap in='SourceGraphic' scale='8' xChannelSelector='R' yChannelSelector='G'/%3E%3C/filter%3E%3Crect x='5' y='5' width='384' height='318' rx='10' filter='url(%23t)'/%3E%3C/svg%3E")
+			no-repeat 0 0 / 100% 100%;
+	}
+
 	/* Covers the card; paintMenu() sets its pixel size for sharp retina drawing */
 	.paint {
 		position: absolute;
 		inset: 0;
 		width: 100%;
 		height: 100%;
-		border-radius: inherit;
 		pointer-events: none;
 	}
 
@@ -333,7 +344,11 @@
 			inset: 0;
 			width: auto;
 			height: auto;
-			border-radius: 0;
+		}
+
+		/* Full screen: no rough edge, the screen edge is the border */
+		.menu::before {
+			mask: none;
 		}
 
 		.menu a {
