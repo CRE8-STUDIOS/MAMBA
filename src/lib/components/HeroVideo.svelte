@@ -135,8 +135,8 @@
 	}
 
 	/* Black glass title: a see-through black fill (a background clipped to the
-	   letters), a faint white rim so the glass edge stays visible on a dark video,
-	   and the Figma black shadow drawn over the fill as an inner shadow at the top
+	   letters), a darker black rim that outlines the glass edge, and the Figma
+	   black shadow drawn over the fill as an inner shadow at the top
 	   of each letter. */
 	.title {
 		position: absolute;
@@ -151,7 +151,7 @@
 		background-color: rgb(0 0 0 / 0.55);
 		background-clip: text;
 		-webkit-background-clip: text;
-		-webkit-text-stroke: 1px rgb(255 255 255 / 0.25);
+		-webkit-text-stroke: 1px rgb(0 0 0 / 0.6);
 		text-shadow: 0 4px 4px rgb(0 0 0 / 0.25);
 		pointer-events: none;
 	}
