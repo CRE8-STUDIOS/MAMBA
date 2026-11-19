@@ -43,3 +43,23 @@
 		</ul>
 	</nav>
 </header>
+
+<style>
+	/* Bare minimum so the menu button is visible and clickable — full design comes later */
+	.menu-button {
+		display: inline-flex;
+		flex-direction: column;
+		justify-content: center;
+		gap: 6px;
+		width: 44px;
+		height: 44px;
+	}
+
+	/* The two lines of the menu icon */
+	.line {
+		display: block;
+		width: 28px;
+		height: 2px;
+		background-color: currentColor;
+	}
+</style>
