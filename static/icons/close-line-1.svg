@@ -1,0 +1,17 @@
+<!-- Close icon, line 1: rotated to form the X (from the Figma design). -->
+<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="86.9269" height="13" viewBox="0 0 86.9269 13" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Line 1" filter="url(#filter0_g_0_4)">
+<line x1="6.5" y1="6.5" x2="80.4269" y2="6.5" stroke-width="5" stroke-linecap="round" stroke="currentColor"/>
+</g>
+<defs>
+<filter id="filter0_g_0_4" x="0" y="0" width="86.9269" height="13" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+<feFlood flood-opacity="0" result="BackgroundImageFix"/>
+<feBlend mode="normal" in="SourceGraphic" in2="BackgroundImageFix" result="shape"/>
+<feTurbulence type="fractalNoise" baseFrequency="0.25 0.25" numOctaves="3" seed="5633" />
+<feDisplacementMap in="shape" scale="8" xChannelSelector="R" yChannelSelector="G" result="displacedImage" width="100%" height="100%" />
+<feMerge result="effect1_texture_0_4">
+<feMergeNode in="displacedImage"/>
+</feMerge>
+</filter>
+</defs>
+</svg>

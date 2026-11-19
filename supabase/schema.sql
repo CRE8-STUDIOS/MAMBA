@@ -66,7 +66,9 @@ create table if not exists public.profile (
   bio             text,
 
   headshot_url    text,
-  hero_media_url  text,   -- image or video for the home hero
+  hero_media_url  text,   -- video for the home hero
+  hero_poster_url text,   -- still image shown while the hero video loads
+  menu_character_url text, -- spray-painting character in the menu (every page); empty = none
   instagram_url   text,
   tiktok_url      text,
 
@@ -75,6 +77,23 @@ create table if not exists public.profile (
 
 comment on table public.profile is
   'Single row with the model''s info, shown on the home and Digitals pages.';
+
+-- Columns added after the first version. CREATE TABLE IF NOT EXISTS skips an
+-- existing table, so these make sure a database created earlier gets them too.
+alter table public.profile add column if not exists hero_poster_url text;
+
+-- menu_image_url (the old menu sticker) was renamed to menu_character_url.
+-- Rename it in a database that still has the old name, then make sure it exists.
+do $$
+begin
+  if exists (
+    select 1 from information_schema.columns
+    where table_schema = 'public' and table_name = 'profile' and column_name = 'menu_image_url'
+  ) then
+    alter table public.profile rename column menu_image_url to menu_character_url;
+  end if;
+end $$;
+alter table public.profile add column if not exists menu_character_url text;
 
 -- Guarantees the table can only ever hold ONE row: every row would have the
 -- same value (true) in this index, so a second insert fails.
@@ -414,19 +433,23 @@ create policy "media: authenticated delete"
 insert into public.profile (
   name, height_cm, bust_cm, waist_cm, hips_cm,
   top_size, bottom_size, shoe_size, hair, eyes, bio,
-  headshot_url, hero_media_url, instagram_url, tiktok_url
+  headshot_url, hero_media_url, hero_poster_url,
+  instagram_url, tiktok_url
 )
 select
   'Mamba', 175, 82, 62, 90,
   'S', '36', '39', 'Dark brown', 'Brown',
   'Model and content creator. Replace this with the real bio.',
   'https://ivbqqemouzzipxkpputf.supabase.co/storage/v1/object/public/media/examples/headshot.jpg',
-  'https://ivbqqemouzzipxkpputf.supabase.co/storage/v1/object/public/media/examples/hero.jpg',
+  -- Upload the hero video to media/home/hero.mp4 (or change this URL to match)
+  'https://ivbqqemouzzipxkpputf.supabase.co/storage/v1/object/public/media/home/hero.mp4',
+  'https://ivbqqemouzzipxkpputf.supabase.co/storage/v1/object/public/media/home/hero-poster.png',
+  -- menu_character_url stays empty until the character is drawn
   'https://www.instagram.com/',
   'https://www.tiktok.com/'
 where not exists (select 1 from public.profile);
 
--- One published project: /work/cold-culture
+-- One published project: /work/content-creation/cold-culture
 insert into public.projects (
   slug, title, category, type, brand_name, cover_image_url,
   description, theme_color, is_published, sort_order

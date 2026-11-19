@@ -34,8 +34,13 @@ async function request(name, query, fallback) {
 	}
 }
 
-export function getProfile() {
-	return request('getProfile', supabase.from('profile').select('*').limit(1).maybeSingle(), null);
+// Pass only the columns a page needs; defaults to all of them.
+export function getProfile(columns = '*') {
+	return request(
+		'getProfile',
+		supabase.from('profile').select(columns).limit(1).maybeSingle(),
+		null
+	);
 }
 
 export function getDigitals() {

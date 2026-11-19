@@ -24,3 +24,6 @@ vite.config.ts.timestamp-*
 
 # Local Claude Code settings
 .claude/settings.local.json
+
+# Content images waiting to be uploaded to Supabase storage
+uploads-todo/
