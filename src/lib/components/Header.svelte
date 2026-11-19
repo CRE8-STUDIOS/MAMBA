@@ -25,6 +25,8 @@
 	];
 
 	const isHome = $derived(page.route.id === '/');
+	// The portfolio design has the logo centred above the page title
+	const isCentered = $derived(page.route.id === '/portfolio');
 
 	// Close the menu after moving to another page, so it isn't still open there.
 	afterNavigate(() => {
@@ -64,7 +66,7 @@
 
 <svelte:window onkeydown={onKeydown} onclick={onWindowClick} />
 
-<header class:home={isHome}>
+<header class:home={isHome} class:centered={isCentered}>
 	<!-- No logo on the home page: the big hero title already says MAMBA -->
 	{#if !isHome}
 		<a class="logo font-display" href="/">MAMBA</a>
@@ -119,6 +121,14 @@
 	}
 
 	/* Home: float over the hero video in white */
+	/* Centred logo, 27px from the top as in the portfolio Figma frame */
+	header.centered {
+		padding-top: 27px;
+		padding-bottom: 0;
+		line-height: var(--leading-tight);
+		text-align: center;
+	}
+
 	header.home {
 		position: absolute;
 		inset: 0 0 auto;
