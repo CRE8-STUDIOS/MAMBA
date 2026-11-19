@@ -136,41 +136,114 @@
 		});
 	}
 
-	function clearShadows() {
-		for (const el of Object.values(shadows)) if (el) el.style.opacity = '0';
+	const reducedMotion = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
+	const allowed = (dir) => index + dir >= 0 && index + dir < spreads.length;
+
+	// ---- Turning, in three steps shared by the arrows and dragging ----
+
+	// 1. Put the sheet in place, ready to turn
+	async function begin(dir) {
+		busy = true;
+		page = { w: magazine.clientWidth / 2, h: magazine.clientHeight };
+		turning = { dir };
+		await tick();
+	}
+
+	// 2. Let it turn over (to = 1) or fall back (to = 0) from where it is
+	async function settle(dir, from, to) {
+		try {
+			const duration = Math.max(200, TURN_MS * Math.abs(to - from));
+			await animate(from, to, duration, (p) => setProgress(p, dir));
+			if (!destroyed && to === 1) index += dir;
+		} finally {
+			end(); // never leave a sheet half-turned or the magazine blocked
+		}
+	}
+
+	// 3. Back to a flat, resting magazine
+	function end() {
+		if (!destroyed) {
+			for (const el of Object.values(shadows)) if (el) el.style.opacity = '0';
+			turning = null;
+		}
+		busy = false;
+	}
+
+	// Reduced motion: no 3D, show the new spread and fade the old one out on top
+	async function crossfade(dir) {
+		busy = true;
+		try {
+			turning = { fadeFrom: index };
+			index += dir;
+			await tick();
+			await animate(1, 0, FADE_MS, (o) => (ghost.style.opacity = String(o)));
+		} finally {
+			end();
+		}
 	}
 
 	// Go one spread forward (1) or back (-1). Ignored while a page is turning.
 	// Resolves to false if there was nowhere to go.
 	export async function turn(dir) {
-		const target = index + dir;
-		if (busy || target < 0 || target >= spreads.length) return false;
-		busy = true;
-
-		// finally: whatever happens, never leave a sheet half-turned or the
-		// magazine blocked
-		try {
-			if (matchMedia('(prefers-reduced-motion: reduce)').matches) {
-				// No 3D: show the new spread and fade the old one out on top
-				turning = { fadeFrom: index };
-				index = target;
-				await tick();
-				await animate(1, 0, FADE_MS, (o) => (ghost.style.opacity = String(o)));
-			} else {
-				page = { w: magazine.clientWidth / 2, h: magazine.clientHeight };
-				turning = { dir };
-				await tick();
-				await animate(0, 1, TURN_MS, (p) => setProgress(p, dir));
-				if (!destroyed) index = target;
-			}
-		} finally {
-			if (!destroyed) {
-				clearShadows();
-				turning = null;
-			}
-			busy = false;
+		if (busy || !allowed(dir)) return false;
+		if (reducedMotion()) {
+			await crossfade(dir);
+		} else {
+			await begin(dir);
+			await settle(dir, 0, 1);
 		}
 		return true;
+	}
+
+	// ---- Dragging / swiping ----
+	// Grab the magazine and pull sideways: pulling left turns forward, right
+	// turns back. The sheet follows the pointer; releasing past 30% of the
+	// magazine's width finishes the turn, otherwise it falls back.
+
+	const DRAG_START = 8; // px before a press counts as a drag (so taps stay taps)
+	const FINISH_AT = 0.3;
+	let drag = null; // { x, id, dir, progress, ready }
+
+	function onPointerDown(event) {
+		if (busy || drag || !event.isPrimary || event.button !== 0) return;
+		drag = { x: event.clientX, id: event.pointerId, dir: 0, progress: 0, ready: false };
+	}
+
+	async function onPointerMove(event) {
+		if (!drag || event.pointerId !== drag.id) return;
+		const dx = event.clientX - drag.x;
+
+		// Decide the direction once the pointer has moved far enough
+		if (!drag.dir) {
+			if (Math.abs(dx) < DRAG_START) return;
+			const dir = dx < 0 ? 1 : -1;
+			if (!allowed(dir)) return (drag = null);
+			drag.dir = dir;
+			magazine.setPointerCapture(event.pointerId);
+			if (reducedMotion()) return; // reduced motion: decide on release only
+			await begin(dir);
+			if (drag) drag.ready = true;
+			else return end(); // released while the sheet was being set up
+		}
+
+		if (drag.ready) {
+			drag.progress = Math.min(1, Math.max(0, (-drag.dir * dx) / magazine.clientWidth));
+			setProgress(drag.progress, drag.dir);
+		}
+	}
+
+	async function onPointerUp(event) {
+		if (!drag || event.pointerId !== drag.id) return;
+		const { dir, progress, ready, x } = drag;
+		drag = null;
+		if (!dir) return;
+
+		if (reducedMotion()) {
+			const pulled = Math.abs(event.clientX - x) / magazine.clientWidth;
+			if (pulled > FINISH_AT && !busy) await crossfade(dir);
+		} else if (ready) {
+			await settle(dir, progress, progress > FINISH_AT ? 1 : 0);
+		}
 	}
 </script>
 
@@ -200,7 +273,14 @@
 	</div>
 {/snippet}
 
-<div class="magazine" bind:this={magazine}>
+<div
+	class="magazine"
+	bind:this={magazine}
+	onpointerdown={onPointerDown}
+	onpointermove={onPointerMove}
+	onpointerup={onPointerUp}
+	onpointercancel={onPointerUp}
+>
 	<div class="page left" style:background-image={pageImage(leftSpread)}>
 		<span class="shadow" bind:this={shadows.left}></span>
 		<span class="corner" class:peeled={peel === 'left' && !turning}></span>
@@ -253,6 +333,10 @@
 		position: relative;
 		width: 100%;
 		height: 100%;
+		/* Horizontal swipes are ours (page turns); vertical ones still scroll */
+		touch-action: pan-y;
+		user-select: none;
+		cursor: grab;
 		/* Depth of the turn: the lifted page comes towards you and may overlap
 		   the magazine's edges, without looming over the whole screen */
 		perspective: 2400px;

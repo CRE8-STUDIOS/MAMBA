@@ -22,6 +22,14 @@
 
 	// Turn the page from an arrow. Focus stays on that arrow; if it has just
 	// disappeared (first or last spread), it moves to the other one.
+	// Arrow keys turn the page, unless someone is typing somewhere
+	function onKeydown(event) {
+		if (event.altKey || event.ctrlKey || event.metaKey) return;
+		if (event.target.closest?.('input, textarea, select, [contenteditable]')) return;
+		if (event.key === 'ArrowRight') magazine.turn(1);
+		if (event.key === 'ArrowLeft') magazine.turn(-1);
+	}
+
 	async function turnFrom(dir) {
 		const [own, other] = dir === 1 ? [arrows.next, arrows.prev] : [arrows.prev, arrows.next];
 		const hadFocus = document.activeElement === own;
@@ -30,6 +38,8 @@
 		if (hadFocus && ownGone) other?.focus();
 	}
 </script>
+
+<svelte:window onkeydown={onKeydown} />
 
 <h1 class="title font-graffiti">Portfolio</h1>
 
