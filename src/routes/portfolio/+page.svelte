@@ -15,15 +15,34 @@
 	let index = $state(0);
 	let canPrev = $state(false);
 	let canNext = $state(false);
+	let peel = $state(null);
+	let arrows = $state({});
 
 	const spread = $derived(data.spreads[index]);
+
+	// Turn the page from an arrow. Focus stays on that arrow; if it has just
+	// disappeared (first or last spread), it moves to the other one.
+	async function turnFrom(dir) {
+		const [own, other] = dir === 1 ? [arrows.next, arrows.prev] : [arrows.prev, arrows.next];
+		const hadFocus = document.activeElement === own;
+		await magazine.turn(dir);
+		const ownGone = dir === 1 ? !canNext : !canPrev;
+		if (hadFocus && ownGone) other?.focus();
+	}
 </script>
 
 <h1 class="title font-graffiti">Portfolio</h1>
 
 <section class="viewer" aria-label="Portfolio magazine">
 	<div class="book">
-		<Magazine bind:this={magazine} spreads={data.spreads} bind:index bind:canPrev bind:canNext />
+		<Magazine
+			bind:this={magazine}
+			spreads={data.spreads}
+			bind:index
+			bind:canPrev
+			bind:canNext
+			{peel}
+		/>
 	</div>
 
 	<!-- Caption under the right page; fades when the spread changes -->
@@ -43,17 +62,28 @@
 
 	{#if data.spreads.length}
 		<div class="arrows">
+			<!-- Hovering or focusing an arrow lifts the matching page corner -->
 			<ArrowButton
+				bind:element={arrows.prev}
 				direction="left"
 				label="Previous page"
 				hidden={!canPrev}
-				onclick={() => magazine.turn(-1)}
+				onclick={() => turnFrom(-1)}
+				onpointerenter={() => (peel = 'left')}
+				onpointerleave={() => (peel = null)}
+				onfocus={() => (peel = 'left')}
+				onblur={() => (peel = null)}
 			/>
 			<ArrowButton
+				bind:element={arrows.next}
 				direction="right"
 				label="Next page"
 				hidden={!canNext}
-				onclick={() => magazine.turn(1)}
+				onclick={() => turnFrom(1)}
+				onpointerenter={() => (peel = 'right')}
+				onpointerleave={() => (peel = null)}
+				onfocus={() => (peel = 'right')}
+				onblur={() => (peel = null)}
 			/>
 		</div>
 	{/if}
