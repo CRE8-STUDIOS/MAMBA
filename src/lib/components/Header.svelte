@@ -171,22 +171,28 @@
 			100% 100%;
 		mask-repeat: no-repeat, no-repeat, repeat, no-repeat;
 		mask-composite: intersect, add, intersect;
-		transition: --reveal 220ms var(--ease-out);
 	}
 
 	/* Open: the hamburger is wiped away, then the X is sprayed on line by line.
 	   Close: the X is wiped, then the hamburger sprays back. Each state sets the
-	   delays for the transition into it. (Fixed ms: no tokens this short.) */
+	   timing of the transition into it. Visibility switches with the paint, so the
+	   inactive icon is really gone even where the spray mask isn't supported.
+	   (Fixed ms: no tokens this short.) */
 	.burger {
 		--icon: url('/icons/menu.svg');
 		width: 79px;
 		height: 23px;
-		transition-delay: 200ms;
+		transition:
+			--reveal 220ms var(--ease-out) 200ms,
+			visibility 0s 200ms;
 	}
 
 	.toggle.open .burger {
 		--reveal: 0%;
-		transition-delay: 0s;
+		visibility: hidden;
+		transition:
+			--reveal 220ms var(--ease-out),
+			visibility 0s 220ms;
 	}
 
 	/* The card is dark on every page, so the X is always white. It sits 24px
@@ -199,18 +205,27 @@
 		width: 87px;
 		height: 13px;
 		background-color: var(--color-white);
+		visibility: hidden;
+		transition:
+			--reveal 220ms var(--ease-out),
+			visibility 0s 220ms;
 	}
 
 	.toggle.open .close {
 		--reveal: 140%;
+		visibility: visible;
 	}
 
 	.toggle.open .close-1 {
-		transition-delay: 200ms;
+		transition:
+			--reveal 220ms var(--ease-out) 200ms,
+			visibility 0s 200ms;
 	}
 
 	.toggle.open .close-2 {
-		transition-delay: 320ms;
+		transition:
+			--reveal 220ms var(--ease-out) 320ms,
+			visibility 0s 320ms;
 	}
 
 	@media (prefers-reduced-motion: reduce) {
