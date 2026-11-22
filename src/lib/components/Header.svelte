@@ -15,7 +15,7 @@ yes<!--
 	let button = $state();
 	let menu = $state();
 	let canvas = $state();
-	let links = $state([]);
+	let lfix netlifyinks = $state([]);
 	let painter = $state();
 
 	const navItems = [
