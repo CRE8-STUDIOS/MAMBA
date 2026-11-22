@@ -1,4 +1,4 @@
-<!--
+yes<!--
   Site header on every page: MAMBA logo, the scribble menu button and the menu
   card (Digitals, Portfolio, Work). On the home page it floats over the
   hero in white without the logo; everywhere else it's black in the normal page flow.

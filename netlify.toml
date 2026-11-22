@@ -1,0 +1,9 @@
+# Netlify build settings: how to build the site and which folder to publish.
+
+[build]
+  command = "npm run build"
+  publish = "build"
+
+# Node version used on Netlify's build servers
+[build.environment]
+  NODE_VERSION = "22"

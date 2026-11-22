@@ -1,6 +1,6 @@
 // Vite + SvelteKit config: compiler options and the deploy adapter.
 
-import adapter from '@sveltejs/adapter-auto';
+import adapter from '@sveltejs/adapter-netlify';
 import { sveltekit } from '@sveltejs/kit/vite';
 import { defineConfig } from 'vite';
 
@@ -13,8 +13,7 @@ export default defineConfig({
 					filename.split(/[/\\]/).includes('node_modules') ? undefined : true
 			},
 
-			// adapter-auto picks the right adapter for the host (Vercel, Netlify, …).
-			// Swap it for a specific adapter once the hosting is decided.
+			// Hosted on Netlify: server routes (+page.server.js) run as Netlify Functions
 			adapter: adapter()
 		})
 	]
